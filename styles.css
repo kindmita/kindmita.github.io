@@ -1,0 +1,417 @@
+@font-face {
+  font-family: "TitleEn";
+  src: url("fonts/title-en.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TitleCn";
+  src: url("fonts/title-cn.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- tokens sampled from plan/template.png ---- */
+:root {
+  --page-bg:    #FFFAFC;
+  --foot-bg:    #FFFFFF;
+  --foot-line:  #F4EDEF;
+
+  --ink:        #241F22;  /* headings */
+  --body:       #413B3D;  /* paragraphs */
+  --muted:      #7D7B7B;  /* eyebrow, footer copy */
+  --chip-ink:   #6B6768;
+
+  --line:       #F0E8EB;  /* pill border */
+  --card-line:  #F7F2F3;  /* avatar card border */
+
+  --accent:     #DD90AA;  /* rose icons */
+  --accent-2:   #E8A98F;  /* warm icon (3rd footer pill) */
+
+  /* avatar gradient: #ab2f4e / #3666c7 lightened 58% toward white */
+  --grad-a:     #DCA8B5;
+  --grad-mid:   #D3B4CE;
+  --grad-b:     #ABBFE7;
+
+  --title-a:    #d44354;  /* title gradient, top */
+  --title-b:    #7378bf;  /* title gradient, bottom */
+  --title-stroke: #fff;
+
+  --card-shadow: 0 18px 40px 0 rgba(90, 60, 70, .8);
+  --sans: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  --wrap-gutter: 96px;
+  --col-gap:     56px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+html { scrollbar-gutter: stable; }
+
+body {
+  background: var(--page-bg);
+  color: var(--body);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* soft pink / lilac washes, as in the template */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(520px 380px at 8% -6%,  rgba(232, 150, 178, .16), transparent 70%),
+    radial-gradient(560px 420px at 62% -12%, rgba(186, 168, 226, .13), transparent 70%),
+    radial-gradient(420px 320px at 98% 42%, rgba(232, 165, 190, .10), transparent 70%);
+}
+
+.wrap {
+  width: min(1120px, calc(100% - var(--wrap-gutter)));
+  margin-inline: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- hero: at least one viewport tall, grows with the copy ---------- */
+/* Top-aligned, never centred: centring would place the content at
+   (heroH - contentH) / 2, and the two languages do not set the same number of
+   lines -- switching them moved the whole column, portrait included. Anchored
+   to the top, the first line and the portrait sit at the same place in both
+   languages and only the tail of the copy extends further down. */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  align-items: start;
+  /* a plain length, not vh: the decorative line is anchored to the top of the
+     hero as well, and the two only stay locked together if the gap between
+     them does not depend on the viewport. 76px is the old clamp's value at a
+     1080px-tall window */
+  padding: 38px 0 18px;
+  overflow: visible;
+}
+
+/* The sweeping line behind the hero. It gets its own clipping layer: putting
+   overflow on .hero (or body) instead would kill the avatar card's sticky.
+
+   The line is drawn at one size, in one place, and never moves. Every value
+   below is a plain px length -- no %, no vw/vh, nothing that reads the
+   viewport, the hero box or the length of the copy. Earlier versions tied it
+   to one of those in turn and each time the line crept upwards: the artwork
+   has a fixed aspect ratio, so any rule that narrowed it also shortened it,
+   pulling the curve back towards its anchor, while the text below, being
+   px-sized, did not shrink at all and only grew taller as it rewrapped.
+   Pinned in px the line also survives browser zoom, which scales px lengths
+   and the type by the same factor.
+
+   Horizontally it is the one thing that still follows the layout, and what it
+   follows is the portrait: the loop in the artwork is meant to wrap around the
+   avatar, so the anchor is the centre of the right-hand column. Anchoring it
+   to the page centre, or to the left edge of the copy, both let it drift away
+   from the portrait as the window narrowed -- the portrait moves left roughly
+   twice as fast as either of those. Only its position moves, never its size,
+   so the curve still cannot creep upwards. On narrow windows it runs past both
+   edges and is clipped rather than shrinking. */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-bg::before {
+  content: "";
+  position: absolute;
+  /* --bg-x is measured from the centre of the avatar column, --bg-y from the
+     top edge of the hero; --bg-w is the artwork's own width and the height
+     follows from the aspect ratio, so --bg-w alone rescales it */
+  --wrap-w: min(1120px, calc(100% - var(--wrap-gutter)));
+  --free:   calc(var(--wrap-w) - var(--col-gap));
+
+  left: calc(
+    50%                                 /* centre of the page ... */
+    - var(--wrap-w) / 2                 /* ... left edge of .wrap */
+    + var(--free) * 1.05 / 2.05         /* ... past the 1.05fr copy column */
+    + var(--col-gap)                    /* ... past the gap */
+    + var(--free) / 2.05 / 2            /* ... to the middle of the 1fr column */
+    + var(--bg-x, -1069px)
+  );
+  top: var(--bg-y, -245px);
+  width: var(--bg-w, 1336px);
+  aspect-ratio: 1336 / 1122;
+  background: url("assets/bg.svg") no-repeat center / 100% 100%;
+}
+
+.hero .wrap {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: var(--col-gap);
+  align-items: start;
+}
+
+/* ---------- left column ---------- */
+.eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  display: inline-block;
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+h1 {
+  margin: 0 0 18px;
+  color: var(--ink);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+
+/* small line, keeps the page's original typeface */
+h1 .greet {
+  display: block;
+  font-family: var(--sans);
+  font-size: clamp(20px, 2vw, 27px);
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+/* big display line: white outline underneath, gradient fill on top.
+   The base element paints the white outline; ::after re-draws the same
+   text with the gradient clipped to the glyphs. */
+h1 .name {
+  display: block;
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  margin-top: .06em;
+  font-weight: 400;
+  font-size: clamp(46px, 6.4vw, 88px);
+  line-height: 1.08;
+  letter-spacing: 0;
+  color: var(--title-stroke);
+  paint-order: stroke fill;
+}
+
+h1 .name::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: linear-gradient(180deg, var(--title-a) 0%, #c486be 50%, #b490d1 60%, var(--title-b) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  pointer-events: none;
+}
+
+html[lang="en"]    h1 .name { font-family: "TitleEn", var(--sans); }
+html[lang="zh-CN"] h1 .name { font-family: "TitleCn", var(--sans); }
+
+.col-left p {
+  margin: 0 0 14px;
+  max-width: 52ch;
+  color: var(--body);
+  font-size: clamp(13.5px, 1.05vw, 15px);
+}
+
+/* ---------- pills (chips, language button, footer links) ---------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--chip-ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.pill svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--accent);
+}
+
+.pill-alt svg { color: var(--accent-2); }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 54ch;
+}
+
+.lang-btn {
+  cursor: pointer;
+  margin-left: auto;
+  letter-spacing: .02em;
+  transition: border-color .2s ease, color .2s ease;
+}
+.lang-btn:hover { border-color: #E6D3DA; color: var(--ink); }
+.lang-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+a.pill { transition: border-color .2s ease, color .2s ease; }
+a.pill:hover { border-color: #E6D3DA; color: var(--ink); }
+
+/* ---------- right column: avatar card ---------- */
+/* Anchored to the top of the row, never to the length of the copy: the two
+   languages have differently sized text, so any centring (against the column
+   or against the viewport, which sticky clamps to the column) would land the
+   card at a different height in EN and ZH. */
+.col-right {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  align-self: stretch; /* gives the sticky card room to travel while scrolling */
+}
+
+/* the portrait stays put while the long copy scrolls past it */
+.avatar-card {
+  position: sticky;
+  top: 24px;
+  margin-top: 69px; /* lines the card up with the first paragraph */
+  width: min(100%, 420px);
+  aspect-ratio: 1 / 1;
+  padding: 14px;
+  border: 1px solid var(--card-line);
+  border-radius: 50%; /* white ring: the padding is the ring's thickness */
+  background: #fff;
+  box-shadow: var(--card-shadow);
+  overflow: visible; /* the particles sit outside the ring */
+}
+
+.avatar-circle {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden; /* the portrait is clipped, the particles are not */
+  background: linear-gradient(135deg,
+    var(--grad-a) 0%,
+    var(--grad-mid) 44%,
+    var(--grad-b) 88%);
+}
+
+.avatar-circle img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.04) translateY(3%);
+}
+
+/* three loose decorations around the ring. Each is sized and placed in % of
+   the card so the whole group scales with it. The percentages are measured
+   from the design against its 536px avatar, and account for the transparent
+   padding inside each .webp -- what is aligned is the artwork, not the box. */
+.particle {
+  position: absolute;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.p1 { left: -4.7%; top: 15.4%; width: 20%; }  /* star + small heart + 2 dots */
+.p2 { left: 80.1%; top:  7.0%; width: 7.5%; } /* pink heart + dot */
+.p3 { left: 88.1%; top: 59.0%; width: 6%; }   /* plus + pink heart */
+
+/* ---------- footer (below the fold) ---------- */
+footer {
+  position: relative;
+  z-index: 1;
+  background: var(--foot-bg);
+  border-top: 1px solid var(--foot-line);
+  padding: 26px 0;
+}
+
+.foot-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.socials {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  :root { --wrap-gutter: 48px; }
+
+  .hero {
+    min-height: 100vh;
+    padding: 56px 0;
+  }
+
+  .hero .wrap {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .col-right {
+    order: -1;
+    align-self: auto;
+  }
+  /* single column now: the portrait sits on the page's centre line, so the
+     anchor collapses to that -- the line keeps the same offset from it */
+  .hero-bg::before { left: calc(50% + var(--bg-x, -1069px)); }
+
+  .avatar-card {
+    position: relative;
+    top: auto;
+    margin-top: 0;
+    width: min(100%, 340px);
+  }
+}
+
+@media (max-width: 520px) {
+  .foot-wrap { justify-content: center; text-align: center; }
+  .socials { justify-content: center; }
+}
