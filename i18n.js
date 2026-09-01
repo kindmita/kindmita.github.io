@@ -89,6 +89,11 @@
         attrs[k].setAttribute(pair.slice(0, at).trim(), d[pair.slice(at + 1).trim()]);
       }
     }
+
+    /* The <h1> intro splits the greeting into per-glyph spans; the textContent
+       writes above have just thrown them away. Anything that decorates a
+       translated string has to be rebuilt here. */
+    document.dispatchEvent(new CustomEvent('i18n:applied', { detail: { lang: lang } }));
   }
 
   var saved = null;

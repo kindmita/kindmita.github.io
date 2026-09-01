@@ -11,6 +11,17 @@
 <link rel="preload" href="fonts/title-en.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/title-cn.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
+
+<!-- Hide the two <h1> lines before the intro can run, so they never flash in
+     their final position first. intro.js drops the class when it starts; the
+     timeout drops it if gsap never loads, so a dead CDN costs the animation
+     and nothing else. -->
+<script>
+  document.documentElement.classList.add('js-intro');
+  window.__introFallback = setTimeout(function () {
+    document.documentElement.classList.remove('js-intro');
+  }, 2500);
+</script>
 </head>
 <body>
 
@@ -36,7 +47,10 @@
            explicit label instead of letting the copy be announced as well -->
       <h1 data-i18n-attr="aria-label:hero.a11yTitle">
         <span class="greet" data-i18n="hero.greet"></span>
-        <span class="name" data-i18n="hero.name" data-i18n-attr="data-text:hero.name"></span>
+        <span class="name-line">
+          <span class="name" data-i18n="hero.name" data-i18n-attr="data-text:hero.name"></span>
+          <span class="name-bar" aria-hidden="true"></span>
+        </span>
       </h1>
 
       <p data-i18n-html="about.p1"></p>
@@ -120,5 +134,10 @@
 </footer>
 
 <script src="i18n.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js"></script>
+<script src="intro.js"></script>
 </body>
 </html>

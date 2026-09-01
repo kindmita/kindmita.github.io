@@ -39,6 +39,13 @@
   --title-a:    #d44354;  /* title gradient, top */
   --title-b:    #7378bf;  /* title gradient, bottom */
   --title-stroke: #fff;
+  --title-grad: linear-gradient(180deg, var(--title-a) 0%, #c486be 50%, #b490d1 60%, var(--title-b) 90%);
+  /* the intro's flat stand-in for the title gradient: the hue sits at the
+     midpoint of --title-a and --title-b, so when the gradient blooms in at the
+     end both ends of it travel the same distance away from where the eye
+     already is. Lifted well above that literal midpoint, which read heavier
+     than the gradient it turns into. */
+  --title-solid: #c06a9b;
 
   --card-shadow: 0 18px 40px 0 rgba(90, 60, 70, .8);
   --sans: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -99,7 +106,14 @@ body::before {
      them does not depend on the viewport. 76px is the old clamp's value at a
      1080px-tall window */
   padding: 38px 0 18px;
-  overflow: visible;
+  /* The body copy is thrown in from past the right edge of the window, so the
+     hero has to trim it on x. `clip`, not `hidden`, and on one axis only: an
+     overflow of `hidden` here -- on either axis -- would turn .hero into a
+     scroll container and strand the avatar card's `position: sticky`, which is
+     what the note above is guarding against. With y left `visible`, x: clip
+     cuts the overflow without creating one. */
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 /* The sweeping line behind the hero. It gets its own clipping layer: putting
@@ -199,23 +213,62 @@ h1 .greet {
   font-weight: 600;
   letter-spacing: -.01em;
   color: var(--ink);
+  /* The intro clips each glyph to this line box, so it has to be tall enough
+     to hold ascenders and descenders -- at h1's 1.1 the tops of the caps were
+     shaved off. The negative margins hand the extra height straight back to
+     the layout, so the big name below sits exactly where it did. */
+  line-height: 1.34;
+  margin-block: -.12em;
 }
 
 /* big display line: white outline underneath, gradient fill on top.
    The base element paints the white outline; ::after re-draws the same
    text with the gradient clipped to the glyphs. */
-h1 .name {
+/* The metrics live on the wrapper, not on .name: the intro's bar is a sibling
+   of the name rather than a child (i18n rewrites .name's textContent on every
+   language switch and would delete anything inside it), and the bar is sized
+   in em against the title's own font-size. */
+h1 .name-line {
   display: block;
   position: relative;
   width: max-content;
   max-width: 100%;
   margin-top: .06em;
-  font-weight: 400;
   font-size: clamp(46px, 6.4vw, 88px);
   line-height: 1.08;
+}
+
+h1 .name {
+  display: block;
+  position: relative;
+  font-weight: 400;
+  font-size: 1em;
   letter-spacing: 0;
   color: var(--title-stroke);
   paint-order: stroke fill;
+
+  /* Intro sweep. --p is the position of the mask's cut, in % of the name's
+     width. It masks .name and its ::after together, which is the whole point:
+     the gradient layer is a pseudo-element and cannot be split into
+     characters, but it can be swept.
+
+     The cut is hard -- both stops sit on the same position, so there is no
+     band of partial alpha anywhere. Any softening here shows up as a pale
+     smear of half-transparent glyph over an almost-white page.
+
+     Nothing is subtracted from --p here. The overlap that guards against
+     sub-pixel disagreement between this (a percentage of the element box) and
+     the bar (positioned in px) is taken on the bar's side, by starting it a
+     pixel early -- widening the covered strip. Taking it here instead widens
+     the *cut* strip, which is bare page, and draws a hairline down the join.
+
+     The default is past the right edge, i.e. fully drawn: with JS off, or
+     before gsap loads, the title is simply there. */
+  --p: 130%;
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 var(--p), transparent var(--p), transparent 100%);
+          mask-image: linear-gradient(90deg, #000 0%, #000 var(--p), transparent var(--p), transparent 100%);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
 }
 
 h1 .name::after {
@@ -223,7 +276,11 @@ h1 .name::after {
   position: absolute;
   left: 0;
   top: 0;
-  background: linear-gradient(180deg, var(--title-a) 0%, #c486be 50%, #b490d1 60%, var(--title-b) 90%);
+  /* the intro cuts the title into per-character reels and this whole-word
+     layer would double them, so it is switched off for as long as they are in
+     place. 1 by default, so with the script removed nothing has changed. */
+  opacity: var(--grad-o, 1);
+  background: var(--title-grad);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -239,6 +296,95 @@ html[lang="zh-CN"] h1 .name { font-family: "TitleCn", var(--sans); }
   max-width: 52ch;
   color: var(--body);
   font-size: clamp(13.5px, 1.05vw, 15px);
+  /* stacked over the hero's line art, under the portrait: a leftover of the
+     intro's old sideways copy sweep, now harmless since the fade-up never
+     leaves this column. Both sit inside .wrap, which is already a stacking
+     context, so these two z-indexes only ever sort against each other. */
+  position: relative;
+  z-index: 0;
+}
+
+/* ---------- first-load intro (see intro.js) ---------- */
+/* Set by an inline script in <head> so the two lines never flash unanimated,
+   and dropped again by intro.js -- or by that same inline script's timeout, if
+   gsap never arrives -- so a failure can only ever cost the animation, never
+   the text. */
+.js-intro h1 .greet,
+.js-intro h1 .name-line,
+.js-intro .col-left p,
+.js-intro .chips > li { visibility: hidden; }
+
+/* One window per glyph. Baseline alignment is off the table: an inline-block
+   with overflow != visible aligns its bottom margin edge to the baseline,
+   which would drop every character by a descender's worth. Top alignment is
+   safe because every slot is exactly one line box tall. */
+.g-slot {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.g-char { display: inline-block; will-change: transform; }
+
+/* The title's reels. One window per character, each holding the same glyph
+   twice -- once flat, once gradient-filled -- so rolling the strip past the
+   window trades one for the other without the letter ever changing.
+
+   The window is exactly one line box. At 88px the ink clears it by 15px at the
+   top and 13px at the bottom, which is also what absorbs the reel's overshoot:
+   the strip runs ~6% of a cell past its stop, and that much of both cells is
+   blank anyway, so nothing is clipped and no gap opens. */
+.n-slot {
+  display: inline-block;
+  overflow: hidden;
+  /* an inline-block with overflow != visible puts its baseline at the bottom
+     margin edge, which would drop every letter; every window is one line box
+     tall, so aligning tops is equivalent to aligning baselines */
+  vertical-align: top;
+  height: 1.08em;
+}
+
+.n-roll { display: block; will-change: transform; }
+
+.n-cell { display: block; height: 1.08em; }
+
+.n-solid { color: var(--title-solid); }
+
+/* the same box the whole-word ::after uses -- one line box tall, at the top of
+   the line -- so a per-character fill and a per-word fill are the same pixels */
+.n-grad {
+  background: var(--title-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* The bar that stands in for the name while it is still masked out. It is the
+   same flat colour the glyphs are revealed in -- as in the reference, where the
+   bar takes on the colour of the word it is about to hand over to -- and the
+   gradient only arrives once the bar has left. A gradient bar was two competing
+   red-to-blue ramps a few pixels apart, and it had no glow: a soft shadow
+   spilling off the bar washed out the letters it had just uncovered.
+
+   Its height is the glyphs', not the line box's, so it reads as a slab of the
+   word rather than a row rule. */
+.name-bar {
+  position: absolute;
+  left: 0;
+  top: .11em;
+  width: 0;
+  height: .84em;
+  /* square: rounded corners let the page show through at the leading edge,
+     which is the one place nothing may be visible */
+  border-radius: 0;
+  background: var(--title-solid);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .name-bar { display: none; }
 }
 
 /* ---------- pills (chips, language button, footer links) ---------- */
@@ -295,6 +441,8 @@ a.pill:hover { border-color: #E6D3DA; color: var(--ink); }
    or against the viewport, which sticky clamps to the column) would land the
    card at a different height in EN and ZH. */
 .col-right {
+  position: relative;
+  z-index: 1;   /* see .col-left p */
   display: flex;
   align-items: flex-start;
   justify-content: center;
