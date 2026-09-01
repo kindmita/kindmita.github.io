@@ -11,11 +11,18 @@
   if (!btn) return;
 
   var DISCORD_URL = 'https://discord.com/channels/@me';
-  var HOLD = 5000;
+  /* Touch devices have no easy way back to a native Discord picker from a
+     web link, so the "click again to open" affordance doesn't apply there —
+     just confirm the copy, in English, and let go sooner. */
+  var isMobile = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  var HOLD = isMobile ? 3000 : 5000;
+  var MOBILE_COPIED_TEXT = 'Copied!';
 
   var swap = btn.querySelector('.swap');
   var idle = btn.querySelector('.swap-idle');
   var done = btn.querySelector('.swap-done');
+
+  if (isMobile) done.textContent = MOBILE_COPIED_TEXT;
 
   var idleW = 0;
   var doneW = 0;
@@ -47,6 +54,7 @@
   }
 
   function label() {
+    if (isMobile) return; /* aria-label stays the copy prompt; there's no open state */
     btn.setAttribute('aria-label',
       btn.dataset[btn.classList.contains('is-copied') ? 'labelOpen' : 'labelCopy']);
   }
@@ -59,7 +67,7 @@
   }
 
   btn.addEventListener('click', function () {
-    if (btn.classList.contains('is-copied')) {
+    if (!isMobile && btn.classList.contains('is-copied')) {
       window.open(DISCORD_URL, '_blank', 'noopener');
       if (timer) clearTimeout(timer);
       reset();
@@ -82,6 +90,7 @@
        apply() has just rewritten aria-label to the idle one, which matches. */
     if (timer) { clearTimeout(timer); timer = null; }
     btn.classList.remove('is-copied');
+    if (isMobile) done.textContent = MOBILE_COPIED_TEXT;
     measure();
   });
 })();
