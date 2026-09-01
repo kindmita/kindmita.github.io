@@ -435,6 +435,47 @@ html[lang="zh-CN"] h1 .name { font-family: "TitleCn", var(--sans); }
 a.pill { transition: border-color .2s ease, color .2s ease; }
 a.pill:hover { border-color: #E6D3DA; color: var(--ink); }
 
+/* ---------- copy-to-clipboard pill (Discord) ---------- */
+.pill-copy {
+  cursor: pointer;
+  transition: border-color .2s ease, color .2s ease;
+}
+.pill-copy:hover { border-color: #E6D3DA; color: var(--ink); }
+.pill-copy:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+/* The label box carries the width animation: both texts are taken out of flow,
+   so the box is only as wide as the width footer.js measures onto it, and the
+   inline-flex button grows and shrinks with it. */
+.swap {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 1.4em;   /* matches .pill line-height, so nothing clips */
+  width: 0;
+  transition: width .42s cubic-bezier(.4, 0, .2, 1);
+}
+
+.swap-txt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  transition: opacity .28s ease, transform .28s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* idle: "Discord" showing, the confirmation parked below */
+.swap-done { opacity: 0; transform: translateY(100%); }
+
+/* copied: "Discord" leaves upward, the confirmation takes its place */
+.is-copied .swap-idle { opacity: 0; transform: translateY(-100%); }
+.is-copied .swap-done { opacity: 1; transform: translateY(0); }
+
+.is-copied { border-color: #E6D3DA; color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .swap, .swap-txt { transition: none; }
+}
+
 /* ---------- right column: avatar card ---------- */
 /* Anchored to the top of the row, never to the length of the copy: the two
    languages have differently sized text, so any centring (against the column

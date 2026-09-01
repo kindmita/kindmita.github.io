@@ -32,7 +32,9 @@
       'foot.copy': '© 2026 Kind Mita. All rights reserved.',
       'foot.email': 'Email',
       'foot.github': 'GitHub',
-      'foot.discord': 'Discord'
+      'foot.discord': 'Discord',
+      'foot.discordCopy': 'Copy Discord ID kind.mita',
+      'foot.discordCopied': 'Discord ID copied! Click to open Discord'
     },
 
     zh: {
@@ -59,7 +61,9 @@
       'foot.copy': '© 2026 善良米塔. 保留所有权利.',
       'foot.email': '邮箱',
       'foot.github': 'GitHub',
-      'foot.discord': 'Discord'
+      'foot.discord': 'Discord',
+      'foot.discordCopy': '复制 Discord ID kind.mita',
+      'foot.discordCopied': 'ID 已复制！再次点击打开 Discord'
     }
   };
 
